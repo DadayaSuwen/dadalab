@@ -120,19 +120,15 @@ const WebGLImage = ({ isVideoOpen }: { isVideoOpen: boolean }) => {
       });
     };
 
-    // 提示：由于原来的逻辑是 mousemove 就触发一次完整的动画流程，
-    // 对于“持续悬停保持故障”的效果，通常需要改逻辑。
-    // 但为了保持代码结构不动，这里设置的是“鼠标一动就闪烁一下”的效果。
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [uniforms, isVideoOpen]);
 
   useFrame((state) => {
     if (meshRef.current) {
-      meshRef.current.material.uniforms.uTime.value =
+      (meshRef.current.material as THREE.ShaderMaterial).uniforms.uTime.value =
         state.clock.getElapsedTime();
 
-      // 移除之前的平滑旋转，保持机械的冷峻感，或者保留极其微小的旋转
       if (!isVideoOpen) {
         meshRef.current.rotation.y = THREE.MathUtils.lerp(
           meshRef.current.rotation.y,
