@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, useScroll, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
+import Links from "next/link";
 
 /**
  * Navbar - 客户端组件
@@ -39,10 +40,10 @@ export default function Navbar() {
   };
 
   const menuItems = [
-    { name: "作品", href: "#work" },
-    { name: "技能", href: "#services" },
-    { name: "价格", href: "#pricing" },
-    { name: "联系", href: "#footer" },
+    { name: "主页", href: "/" },
+    { name: "文章", href: "/blog" },
+    { name: "联系", href: "/contact" },
+    { name: "关于", href: "/about" },
   ];
 
   return (
@@ -59,9 +60,9 @@ export default function Navbar() {
             className="pointer-events-auto group relative overflow-hidden h-8"
           >
             <div className="text-2xl font-bold tracking-tighter uppercase font-mono flex flex-col transition-transform duration-500 group-hover:-translate-y-1/2 h-[200%]">
-              <span className="h-1/2 flex items-center">哒哒工作室</span>
+              <span className="h-1/2 flex items-center">哒哒个人工作室©</span>
               <span className="h-1/2 flex items-center text-lime-400">
-                DADALAB.STUDIO
+                DADALAB.STUDIO©
               </span>
             </div>
           </a>
@@ -69,13 +70,13 @@ export default function Navbar() {
           {/* Desktop Menu - Floating Glass Capsule */}
           <div className="hidden md:flex pointer-events-auto bg-neutral-900/40 backdrop-blur-xl border border-white/10 rounded-full p-1 gap-1 shadow-2xl">
             {menuItems.map((item) => (
-              <a
+              <Links
                 key={item.name}
                 href={item.href}
                 className="relative px-6 py-2 rounded-full text-sm font-medium uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-300"
               >
                 {item.name}
-              </a>
+              </Links>
             ))}
           </div>
 
@@ -143,10 +144,7 @@ export default function Navbar() {
             <div className="mt-12 pt-8 border-t border-black/20 grid grid-cols-2 text-black font-mono text-sm uppercase">
               <div>
                 <p>Guanzhou, China | 广州 中国</p>
-                <p>1179002658@qq.com</p>
-              </div>
-              <div className="text-right">
-                <p>WeChat</p>
+                <p>robjffian@gmail.com</p>
               </div>
             </div>
           </motion.div>

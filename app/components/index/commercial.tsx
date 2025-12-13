@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
+import Link from "next/link";
 import { useRef, useEffect, useState } from "react";
 
 export default function CommercialImpact() {
@@ -52,27 +53,27 @@ export default function CommercialImpact() {
 
   const cards = [
     {
-      title: "Performance",
-      subtitle: "Speed is Revenue",
-      desc: "亚马逊研究显示，页面每延迟 100ms 就会导致 1% 的销售额损失。我们的 Next.js 架构确保您的网站在毫秒级加载，留住每一个潜在客户。",
+      title: "极致性能",
+      subtitle: "快一秒都是赢",
+      desc: "亚马逊有项研究：页面加载慢100毫秒，销量就掉1%。我们用Next.js框架，保证网站快到飞起，不让任何一个客户因为等待而流失。",
       metric: "99+",
-      label: "Google Lighthouse Score",
+      label: "Google Lighthouse 评分",
       icon: <Zap className="w-8 h-8 text-black" />,
     },
     {
-      title: "SEO Dominance",
-      subtitle: "Be Found First",
-      desc: "不仅仅是关键词堆砌。我们构建语义化的 HTML 结构和 SSR 服务端渲染，让搜索引擎优先收录您的核心业务，零成本获取自然流量。",
+      title: "SEO霸榜",
+      subtitle: "让你在搜索结果中C位出道",
+      desc: "别再傻乎乎地堆关键词了。我们用语义化HTML结构和SSR服务端渲染技术，让搜索引擎第一时间发现并收录你的核心业务，轻松获得免费的自然流量。",
       metric: "300%",
-      label: "Organic Traffic Growth",
+      label: "自然流量增长",
       icon: <Globe className="w-8 h-8 text-black" />,
     },
     {
-      title: "Conversion",
-      subtitle: "Design for ROI",
-      desc: "每一个动效、每一个按钮布局都基于用户心理学设计。我们不仅仅是在做设计，而是在设计一条引导访客完成支付的“滑梯”。",
+      title: "转化率爆表",
+      subtitle: "每一笔设计都为了赚钱",
+      desc: "每个动效、每个按钮的位置都经过精心设计，牢牢抓住用户心理。我们不只是在做网页设计，更像是在打造一条让用户心甘情愿付款的高速公路。",
       metric: "5.2%",
-      label: "Avg. Conversion Rate",
+      label: "平均转化率",
       icon: <TrendingUp className="w-8 h-8 text-black" />,
     },
   ];
@@ -90,17 +91,16 @@ export default function CommercialImpact() {
                 <Target className="w-4 h-4" /> Commercial Impact
               </h2>
               <h3 className="text-[9vw] leading-[0.85] font-black uppercase tracking-tighter mb-12">
-                Not Just Art.
+                不只是艺术.
                 <br />
-                <span className="text-neutral-700">Business Logic.</span>
+                <span className="text-neutral-700">Not Just Art.</span>
               </h3>
               <div className="flex items-center gap-6 pl-2 border-l-2 border-lime-400">
                 <p className="text-xl md:text-2xl text-neutral-400 max-w-xl font-light">
-                  在这个注意力稀缺的时代，我们用顶级的前端技术为您构建一台{" "}
+                  在这个注意力稀缺的时代，我们用技术为您打造
                   <span className="text-white font-bold">
-                    24/7 自动运转的印钞机
+                    高效卓越的应用体验
                   </span>
-                  。
                 </p>
               </div>
               <div className="mt-12 flex gap-4 text-xs font-mono text-neutral-600 uppercase">
@@ -154,11 +154,14 @@ export default function CommercialImpact() {
                 Ready to <br /> Scale?
               </h2>
               <p className="text-xl md:text-2xl font-bold mb-12 max-w-xl mx-auto">
-                别让糟糕的网站拖累您的业务增长。
+                联系我帮你解决您的问题。
               </p>
-              <button className="px-12 py-6 bg-black text-white text-xl font-bold rounded-full uppercase tracking-widest hover:scale-105 hover:bg-white hover:text-black transition-all duration-300 shadow-2xl">
+              <Link
+                href="/contact"
+                className="px-12 py-6 bg-black text-white text-xl font-bold rounded-full uppercase tracking-widest hover:scale-105 hover:bg-white hover:text-black transition-all duration-300 shadow-2xl"
+              >
                 联系我
-              </button>
+              </Link>
             </div>
 
             {/* Background Pattern */}

@@ -85,7 +85,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row items-center justify-between mt-20 md:mt-0">
             <div className="w-full md:w-auto">
               <h2 className="text-[14vw] md:text-[12vw] leading-[0.8] font-black tracking-tighter uppercase mb-8">
-                Let&apos;s <br /> Go
+                开始 <br /> Go
               </h2>
             </div>
 
@@ -93,12 +93,12 @@ export default function Footer() {
             <div className="relative z-20">
               <Magnetic>
                 <a
-                  href="mailto:hello@dadastudio.com"
+                  href="robjffian@gmail.com"
                   className="w-48 h-48 md:w-64 md:h-64 bg-black rounded-full flex items-center justify-center text-white cursor-pointer group transition-all duration-300 hover:scale-110"
                 >
                   <div className="flex flex-col items-center gap-2 group-hover:gap-4 transition-all duration-300">
                     <span className="text-lg font-bold uppercase tracking-widest">
-                      Get in touch
+                      联系我
                     </span>
                     <ArrowUpRight className="w-8 h-8 group-hover:rotate-45 transition-transform duration-300 text-lime-400" />
                   </div>
@@ -107,12 +107,10 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Bottom Section: Info Grid */}
           <FooterStatic />
 
-          {/* Background Deco */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[40vw] font-black opacity-[0.03] pointer-events-none select-none">
-            DADA
+            哒哒
           </div>
         </div>
       </div>

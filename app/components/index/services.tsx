@@ -35,23 +35,23 @@ export default function Services() {
   const services = [
     {
       id: "01",
-      title: "Next.js Architecture",
-      desc: "高性能服务端渲染 (SSR) 与企业级 SEO 优化方案",
-      tags: ["React", "Performance", "SEO"],
+      title: "Next.js架构开发",
+      desc: "让你的网站又快又容易被搜索引擎找到的高性能方案",
+      tags: ["React", "高性能", "SEO优化"],
       img: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2264&auto=format&fit=crop",
     },
     {
       id: "02",
-      title: "Taro Mini Apps",
-      desc: "微信/支付宝小程序多端统一开发，原生级体验",
-      tags: ["WeChat", "Cross-Platform", "Mobile"],
+      title: "Taro小程序开发",
+      desc: "一次开发，微信支付宝等多个平台都能用，体验跟原生一样好",
+      tags: ["微信小程序", "多端适配", "移动端"],
       img: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?q=80&w=2340&auto=format&fit=crop",
     },
     {
       id: "03",
-      title: "WebGL Interactions",
-      desc: "Three.js 与 Framer Motion 打造沉浸式视觉动效",
-      tags: ["3D", "Animation", "Creative"],
+      title: "WebGL互动特效",
+      desc: "用Three.js和Framer Motion打造让人眼前一亮的酷炫动画效果",
+      tags: ["3D效果", "动画", "创意设计"],
       img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2340&auto=format&fit=crop",
     },
   ];
@@ -68,13 +68,13 @@ export default function Services() {
           {/* Left Column: Sticky Title */}
           <div className="md:w-1/3 md:sticky md:top-32 h-fit">
             <h2 className="text-sm font-mono text-lime-400 mb-6 uppercase tracking-widest">
-              Our Expertise
+              我们的专长
             </h2>
             <h3 className="text-5xl md:text-6xl font-bold tracking-tighter leading-tight mb-8">
-              我能做的 <br /> 创造 <br /> 沟通
+              我擅长的 <br /> 实现 <br /> 解决问题
             </h3>
             <p className="text-neutral-400 max-w-sm">
-              我们在技术与艺术的交叉点，为您提供从前端交互到后端架构的一站式解决方案。
+              我们站在技术与艺术的交汇处，为你提供从界面交互到系统架构的一条龙服务。
             </p>
           </div>
 

@@ -32,7 +32,7 @@ export default function FooterStatic() {
     <div className="flex flex-col md:flex-row justify-between items-end border-t border-black/20 pt-10">
       <div className="flex flex-col gap-4 mb-8 md:mb-0">
         <div className="flex items-center gap-4 relative">
-          <WeChatPopup>WeChat</WeChatPopup>
+          <WeChatPopup>微信</WeChatPopup>
         </div>
         <motion.p
           initial={{ opacity: 0, y: 20 }}
@@ -40,8 +40,8 @@ export default function FooterStatic() {
           transition={{ delay: 0.2 }}
           className="text-xl font-bold max-w-sm mt-4"
         >
-          我们创造数字体验，
-          <br /> 连接品牌与未来。
+          创造技术体验，
+          <br /> 连接想法与实现。
         </motion.p>
       </div>
 
