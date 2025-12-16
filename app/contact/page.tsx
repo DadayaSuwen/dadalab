@@ -7,6 +7,7 @@ import {
   MessageSquare,
   Building2,
   User,
+  AlertCircle, // 新增图标用于显示错误
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,9 @@ import type { UseFormRegister, FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
+import { submitContactForm } from "@/app/actions/contact";
+
+// --- 组件定义保持不变 ---
 const Magnetic = ({ children }: { children: React.ReactNode }) => {
   const ref = useRef<HTMLDivElement>(null);
   const position = { x: useMotionValue(0), y: useMotionValue(0) };
@@ -81,20 +85,22 @@ const CustomInput = ({
   </span>
 );
 
+// Schema 定义 (与 Server Action 保持一致)
 const formSchema = z.object({
   name: z.string().min(2, "姓名至少需要2个字符"),
-  company: z.string().optional(),
+  company: z.string().min(2, "个人 / 组织至少需要2个字符"),
   projectType: z.string(),
   email: z.string().email("请输入有效的邮箱地址"),
   message: z.string().min(10, "请至少输入10个字符的描述"),
 });
 
-// 从 formSchema 推断出类型
 type FormData = z.infer<typeof formSchema>;
 
 export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  // 新增错误状态
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const {
     register,
@@ -106,21 +112,35 @@ export default function Contact() {
     defaultValues: {
       name: "",
       company: "",
-      projectType: "Website",
+      projectType: "Website", // 默认值
       email: "",
       message: "",
     },
   });
 
+  // 修改后的提交处理函数
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    console.log("Form data:", data);
-    setSubmitSuccess(true);
-    setIsSubmitting(false);
-    reset();
-    setTimeout(() => setSubmitSuccess(false), 5000);
+    setErrorMessage(null); // 重置之前的错误
+
+    try {
+      // 调用 Supabase Server Action
+      const result = await submitContactForm(data);
+
+      if (result.success) {
+        setSubmitSuccess(true);
+        reset(); // 清空表单
+        setTimeout(() => setSubmitSuccess(false), 5000);
+      } else {
+        // 显示后端返回的错误信息
+        setErrorMessage(result.error || "提交失败，请稍后重试");
+      }
+    } catch (error) {
+      console.error(error);
+      setErrorMessage("网络连接异常，请检查您的网络设置");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -230,11 +250,11 @@ export default function Contact() {
                     {isSubmitting ? (
                       <span className="flex items-center justify-center gap-4">
                         <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                        Sending...
+                        发送中...
                       </span>
                     ) : (
                       <span className="flex items-center justify-center gap-4">
-                        Send Inquiry{" "}
+                        发送
                         <ArrowRight className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-2 transition-transform" />
                       </span>
                     )}
@@ -304,6 +324,22 @@ export default function Contact() {
               </CardContent>
             </Card>
 
+            {/* 错误提示框 */}
+            {errorMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-4 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400"
+              >
+                <div className="flex items-center gap-2 font-semibold">
+                  <AlertCircle className="w-4 h-4" />
+                  提交失败
+                </div>
+                <p className="text-sm mt-1">{errorMessage}</p>
+              </motion.div>
+            )}
+
+            {/* 成功提示框 */}
             {submitSuccess && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}

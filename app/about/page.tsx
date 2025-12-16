@@ -198,7 +198,7 @@ export default function Page() {
               <h2 className="text-sm font-mono text-neutral-500 uppercase tracking-widest">
                 01 / Career & Education
               </h2>
-              <div className="h-[1px] flex-1 bg-neutral-800"></div>
+              <div className="h-px flex-1 bg-neutral-800"></div>
             </div>
 
             {/* List Container */}
@@ -209,7 +209,7 @@ export default function Page() {
                 title="广东数果科技"
                 role="前端开发工程师"
                 tags={["React组件", "数据可视化", "性能优化"]}
-                description="负责公司数据中台的前端架构改造。专门处理复杂的图表渲染问题，成功让页面打开速度快了40%。在紧张的项目周期里，独立完成了重要功能模块的开发和交付。"
+                description="曾经负责公司前后端低代码项目开发。专门处理复杂的图表渲染问题，独立完成开发和交付。"
               />
 
               <ListItem
@@ -217,7 +217,7 @@ export default function Page() {
                 title="广州软件学院"
                 role="智能科学与技术"
                 tags={["本科学历", "计算机科学"]}
-                description="从到职场摸爬滚打多年后，决定重返校园深造。学习计算机科学理论知识"
+                description="目前正在读书中"
               />
 
               <ListItem

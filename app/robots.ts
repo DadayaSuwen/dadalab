@@ -8,12 +8,22 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/admin/", "/_next/", "/static/"],
+        disallow: ["/api/", "/admin/", "/_next/", "/static/", "/private/"],
       },
       {
         userAgent: "Googlebot",
         allow: "/",
-        disallow: ["/api/", "/admin/"],
+        disallow: ["/api/", "/admin/", "/private/"],
+      },
+      {
+        userAgent: "Baiduspider",
+        allow: "/",
+        disallow: ["/api/", "/admin/", "/private/"],
+      },
+      {
+        userAgent: "bingbot",
+        allow: "/",
+        disallow: ["/api/", "/admin/", "/private/"],
       },
     ],
     sitemap: `${baseUrl}/sitemap.xml`,

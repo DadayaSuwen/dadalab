@@ -23,7 +23,13 @@ const wrap = (min: number, max: number, v: number) => {
  */
 export default function VelocityMarquee() {
   // Internal Component for a single moving line
-  const ParallaxText = ({ children, baseVelocity = 100 }: { children: React.ReactNode; baseVelocity?: number }) => {
+  const ParallaxText = ({
+    children,
+    baseVelocity = 100,
+  }: {
+    children: React.ReactNode;
+    baseVelocity?: number;
+  }) => {
     const baseX = useMotionValue(0);
     const { scrollY } = useScroll();
     const scrollVelocity = useVelocity(scrollY);

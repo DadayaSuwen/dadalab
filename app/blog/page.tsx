@@ -1,198 +1,82 @@
-"use client";
-import {
-  AnimatePresence,
-  motion,
-  useMotionValue,
-  useSpring,
-} from "framer-motion";
-import { useRef, useState } from "react";
+import { supabase } from "@/lib/supabase/supabase";
+import BlogList from "./blog-list";
 
-export default function Blog() {
-  const [hoveredArticle, setHoveredArticle] = useState<number | null>(null);
-  const containerRef = useRef(null);
+export const revalidate = 60;
 
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
+// 1. 定义基础类型
+interface Tag {
+  name: string;
+}
 
-  const springConfig = { damping: 20, stiffness: 300, mass: 0.5 };
-  const smoothX = useSpring(mouseX, springConfig);
-  const smoothY = useSpring(mouseY, springConfig);
+interface Category {
+  id: number;
+  name: string;
+}
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    mouseX.set(e.clientX);
-    mouseY.set(e.clientY);
-  };
+// 2. 定义前端最终使用的文章类型 (BlogList 组件需要的)
+export interface Article {
+  id: number;
+  title: string;
+  slug: string;
+  published_at: string;
+  read_time_minutes: number;
+  cover_image: string;
+  category: { name: string } | null;
+  tags: Tag[]; // 最终我们希望 tags 是简单的数组: [{name: 'React'}, {name: 'Vue'}]
+}
 
-  const articles = [
-    {
-      id: 1,
-      date: "2024.05.20",
-      title: "Next.js 14 Server Actions 深度解析",
-      tags: ["Development", "React"],
-      readTime: "8 min read",
-      image:
-        "https://images.unsplash.com/photo-1633356122544-f134324a6cee?q=80&w=2070&auto=format&fit=crop",
-    },
-    {
-      id: 2,
-      date: "2024.05.15",
-      title: "WebGL 性能优化指南：从 30fps 到 60fps",
-      tags: ["Performance", "3D"],
-      readTime: "12 min read",
-      image:
-        "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2340&auto=format&fit=crop",
-    },
-    {
-      id: 3,
-      date: "2024.05.08",
-      title: "现代前端 SEO 策略：SSG vs SSR",
-      tags: ["SEO", "Marketing"],
-      readTime: "6 min read",
-      image:
-        "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?q=80&w=2074&auto=format&fit=crop",
-    },
-    {
-      id: 4,
-      date: "2024.04.28",
-      title: "为 Awwwards 网站设计微交互动效",
-      tags: ["Design", "Animation"],
-      readTime: "10 min read",
-      image:
-        "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2264&auto=format&fit=crop",
-    },
-    {
-      id: 5,
-      date: "2024.04.12",
-      title: "Taro 跨端开发实战：踩坑与最佳实践",
-      tags: ["Mobile", "MiniProgram"],
-      readTime: "15 min read",
-      image:
-        "https://images.unsplash.com/photo-1555774698-0b77e0d5fac6?q=80&w=2070&auto=format&fit=crop",
-    },
-  ];
+// 3. 定义 Supabase 原始返回的类型 (为了处理 any)
+// Supabase 联表查询 article_tags(tags(name)) 返回的是嵌套结构
+interface SupabaseRawArticle extends Omit<Article, "tags"> {
+  tags: {
+    tags: Tag | null; // 因为是联表，可能存在空值情况，虽然你的业务逻辑可能不允许
+  }[];
+}
 
-  const categories = [
-    "All",
-    "Development",
-    "Design",
-    "Performance",
-    "Business",
-  ];
+async function getArticles(): Promise<Article[]> {
+  const { data, error } = await supabase
+    .from("articles")
+    .select(
+      `
+      id,
+      title,
+      slug,
+      published_at,
+      read_time_minutes,
+      cover_image,
+      category:categories(name),
+      tags:article_tags(tags(name)) 
+    `
+    )
+    .order("published_at", { ascending: false });
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-      className="bg-neutral-950 min-h-screen pt-32 pb-20"
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
-    >
-      <div className="container mx-auto px-6">
-        {/* Header */}
-        <div className="mb-20 md:mb-32">
-          <h1 className="text-[12vw] leading-[0.8] font-black uppercase tracking-tighter text-white mb-8">
-            Insights <span className="text-neutral-800">&</span> <br />
-            <span className="text-lime-400">Engineering</span>
-          </h1>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-neutral-800 pb-8">
-            <p className="text-neutral-400 max-w-md text-lg">
-              定期分享关于 Next.js、Web 开发的深度文章。
-            </p>
+  if (error) {
+    console.error("Error fetching articles:", error);
+    return [];
+  }
 
-            {/* Filter Tags */}
-            <div className="flex flex-wrap gap-2 mt-8 md:mt-0">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  className="px-4 py-2 border border-neutral-800 rounded-full text-sm font-mono uppercase text-neutral-400 hover:border-lime-400 hover:text-lime-400 transition-colors"
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+  // 4. 类型断言与数据转换
+  // 我们告诉 TS，data 就是 SupabaseRawArticle 数组
+  const rawData = data as unknown as SupabaseRawArticle[];
 
-        {/* Article List (Index Style) */}
-        <div
-          className="relative z-10"
-          onMouseLeave={() => setHoveredArticle(null)}
-        >
-          {articles.map((article) => (
-            <motion.div
-              key={article.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: article.id * 0.1 }}
-              onMouseEnter={() => setHoveredArticle(article.id)}
-              className={`group relative flex flex-col md:flex-row items-baseline py-12 border-b border-neutral-900 transition-all duration-300 cursor-pointer ${
-                hoveredArticle && hoveredArticle !== article.id
-                  ? "opacity-30 blur-[1px]"
-                  : "opacity-100"
-              }`}
-            >
-              <div className="w-full md:w-1/4 mb-2 md:mb-0">
-                <span className="font-mono text-sm text-neutral-500 group-hover:text-lime-400 transition-colors">
-                  {article.date}
-                </span>
-              </div>
-              <div className="w-full md:w-2/4">
-                <h2 className="text-3xl md:text-5xl font-bold text-white group-hover:translate-x-4 transition-transform duration-300">
-                  {article.title}
-                </h2>
-              </div>
-              <div className="w-full md:w-1/4 flex justify-end gap-2 mt-4 md:mt-0">
-                {article.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="text-xs font-mono border border-neutral-800 px-2 py-1 rounded text-neutral-500 uppercase"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
+  const formattedData: Article[] = rawData.map((item) => ({
+    ...item,
+    // 这里处理拍平逻辑：从 [{ tags: { name: 'xxx'} }] 变成 [{ name: 'xxx' }]
+    tags: item.tags.map((t) => t.tags).filter((t): t is Tag => t !== null), // 过滤掉可能的 null 值，保证类型安全
+  }));
 
-      {/* Floating Preview Image */}
-      <AnimatePresence>
-        {hoveredArticle && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2 }}
-            style={{
-              x: smoothX,
-              y: smoothY,
-              translateX: "-50%",
-              translateY: "-50%",
-              left: 0,
-              top: 0,
-            }}
-            className="fixed z-20 pointer-events-none w-[300px] h-[200px] md:w-[400px] md:h-[280px] rounded-lg overflow-hidden border border-lime-400/30 shadow-2xl hidden md:block"
-          >
-            {articles.map(
-              (article) =>
-                article.id === hoveredArticle && (
-                  <motion.img
-                    key={article.id}
-                    initial={{ scale: 1.2, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.4 }}
-                    src={article.image}
-                    alt={article.title}
-                    className="w-full h-full object-cover"
-                  />
-                )
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
+  return formattedData;
+}
+
+async function getCategories(): Promise<Category[]> {
+  const { data } = await supabase.from("categories").select("id, name");
+  // 简单的类型断言
+  return (data as Category[]) || [];
+}
+
+export default async function Page() {
+  const articles = await getArticles();
+  const categories = await getCategories();
+
+  return <BlogList initialArticles={articles} categories={categories} />;
 }

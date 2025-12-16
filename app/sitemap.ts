@@ -1,14 +1,29 @@
 import { MetadataRoute } from "next";
-
-export default function sitemap(): MetadataRoute.Sitemap {
+import { supabase } from "@/lib/supabase/supabase";
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://www.dadalab.cn";
 
-  return [
+  const { data: articles } = await supabase
+    .from("articles")
+    .select("slug, published_at");
+
+  // 生成动态的文章路由数组
+  const blogRoutes: MetadataRoute.Sitemap =
+    articles?.map(
+      (article: { slug: string; published_at: string | number | Date }) => ({
+        url: `${baseUrl}/blog/${article.slug}`,
+        lastModified: new Date(article.published_at),
+        changeFrequency: "weekly",
+        priority: 0.6,
+      })
+    ) || [];
+
+  const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1,
+      changeFrequency: "daily",
+      priority: 1.0,
     },
     {
       url: `${baseUrl}/about`,
@@ -17,22 +32,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/services`,
+      url: `${baseUrl}/blog`,
       lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/portfolio`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
+      changeFrequency: "daily",
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/contact`,
       lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.7,
+      changeFrequency: "yearly",
+      priority: 0.5,
     },
   ];
+
+  // 4. 合并并返回
+  return [...staticRoutes, ...blogRoutes];
 }
+// daily;
+// weekly
+// monthly
+// yearly

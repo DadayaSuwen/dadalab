@@ -153,7 +153,7 @@ export default function Work() {
           <span className="text-neutral-800">精选</span>
         </h2>
         <p className="max-w-md text-neutral-400">
-          每一个项目都是一次对完美的探索。向下滚动，体验我们如何通过代码与设计重塑数字世界。
+          通过代码与设计去实现完美的项目
         </p>
       </div>
 

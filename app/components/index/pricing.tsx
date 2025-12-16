@@ -1,22 +1,18 @@
 "use client";
+
+import { useRef } from "react";
 import { motion, useMotionTemplate, useMotionValue } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
-import {
-  JSXElementConstructor,
-  Key,
-  ReactElement,
-  ReactNode,
-  ReactPortal,
-  useRef,
-} from "react";
 
-// 7.5 Pricing Module (Spotlight Matrix Effect)
+import GridScan from "../ui/grid-scan";
+import Link from "next/link";
+
 export default function Pricing() {
   const containerRef = useRef<HTMLElement>(null);
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  const handleMouseMove = (e: { clientX: number; clientY: number }) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     if (!containerRef.current) return;
     const { left, top } = containerRef.current.getBoundingClientRect();
     mouseX.set(e.clientX - left);
@@ -26,7 +22,7 @@ export default function Pricing() {
   const plans = [
     {
       title: "技术问题/毕设",
-      price: "¥500起",
+      price: "¥50起",
       description: "解决技术难题或帮你完成毕业设计。",
       features: [
         "Bug修复与调试",
@@ -72,17 +68,35 @@ export default function Pricing() {
       id="pricing"
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className="relative py-32 bg-neutral-950 text-white overflow-hidden group"
+      className="relative py-32 bg-neutral-950 text-white overflow-hidden"
     >
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="mb-20 text-center max-w-2xl mx-auto">
+      {/* --- Grid Scan Background --- */}
+      <div className="absolute inset-0 z-0">
+        <GridScan
+          linesColor="#3f6212"
+          scanColor="#a3e635"
+          lineThickness={0.8}
+          gridScale={0.15}
+          scanOpacity={0.6}
+          scanGlow={1.5}
+          scanOnClick={true}
+          enablePost={true}
+          bloomIntensity={0.8}
+          noiseIntensity={0.02}
+        />
+        <div className="absolute top-0 left-0 w-full h-32 bg-linear-to-b from-neutral-950 to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-full h-32 bg-linear-to-t from-neutral-950 to-transparent pointer-events-none" />
+      </div>
+
+      <div className="container mx-auto px-6 relative z-10 pointer-events-none">
+        <div className="mb-20 text-center max-w-2xl mx-auto pointer-events-auto">
           <h2 className="text-4xl md:text-6xl font-bold tracking-tighter uppercase mb-6">
             开发 <span className="text-lime-400">价格</span>
           </h2>
           <p className="text-neutral-400 text-lg">创造商业价值的数字产品</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto pointer-events-auto">
           {plans.map((plan, i) => (
             <PricingCard
               key={i}
@@ -94,24 +108,11 @@ export default function Pricing() {
           ))}
         </div>
       </div>
-
-      {/* Background Spotlight (Large Ambient Light) */}
-      <motion.div
-        className="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-0"
-        style={{
-          background: useMotionTemplate`
-            radial-gradient(
-              650px circle at ${mouseX}px ${mouseY}px,
-              rgba(163, 230, 53, 0.1),
-              transparent 80%
-            )
-          `,
-        }}
-      />
     </section>
   );
 }
 
+// --- Pricing Card (保持不变) ---
 interface Plan {
   title: string;
   price: string;
@@ -137,25 +138,22 @@ const PricingCard = ({
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1, duration: 0.5 }}
       viewport={{ once: true }}
-      className="relative h-full bg-neutral-900 border border-white/5 rounded-3xl p-8 flex flex-col overflow-hidden group/card"
+      className="relative h-full bg-neutral-900/60 backdrop-blur-md border border-white/5 rounded-3xl p-8 flex flex-col overflow-hidden group/card hover:border-lime-500/30 transition-colors duration-500"
     >
-      {/* Border Spotlight Effect (Hover) */}
       <motion.div
         className="pointer-events-none absolute -inset-px rounded-3xl opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 z-10"
         style={{
           background: useMotionTemplate`
             radial-gradient(
               300px circle at ${mouseX}px ${mouseY}px,
-              rgba(163, 230, 53, 0.4),
+              rgba(163, 230, 53, 0.15),
               transparent 80%
             )
           `,
         }}
       />
-      {/* Inner Mask to create the border look */}
-      <div className="absolute inset-[1px] bg-neutral-900 rounded-[23px] z-10" />
+      <div className="absolute inset-px bg-neutral-900/80 rounded-[23px] z-10" />
 
-      {/* Content */}
       <div className="relative z-20 flex flex-col h-full">
         {plan.popular && (
           <div className="absolute top-0 right-0">
@@ -178,7 +176,7 @@ const PricingCard = ({
         </div>
         <p className="text-neutral-400 text-sm mb-8 h-10">{plan.description}</p>
 
-        <div className="flex-grow space-y-4 mb-8">
+        <div className="grow space-y-4 mb-8">
           {plan.features.map((feature, idx) => (
             <div key={idx} className="flex items-start gap-3">
               <div className="mt-1 min-w-5 min-h-5 rounded-full bg-neutral-800 flex items-center justify-center border border-white/10 group-hover/card:border-lime-500/50 transition-colors">
@@ -189,25 +187,18 @@ const PricingCard = ({
           ))}
         </div>
 
-        <button
+        <Link
+          href="/contact"
           className={`w-full py-4 rounded-xl font-bold uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 group/btn ${
             plan.popular
-              ? "bg-lime-500 text-black hover:bg-lime-400"
+              ? "bg-lime-500 text-black hover:bg-lime-400 shadow-[0_0_20px_rgba(163,230,53,0.3)]"
               : "bg-white text-black hover:bg-neutral-200"
           }`}
         >
-          Start Now
+          开始
           <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-        </button>
+        </Link>
       </div>
-
-      {/* Subtle Noise Texture */}
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none z-0 mix-blend-overlay"
-        style={{
-          backgroundImage: `url("https://grainy-gradients.vercel.app/noise.svg")`,
-        }}
-      />
     </motion.div>
   );
 };

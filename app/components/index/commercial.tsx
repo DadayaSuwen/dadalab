@@ -1,5 +1,5 @@
 "use client";
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowRight,
   Globe,
@@ -15,41 +15,29 @@ export default function CommercialImpact() {
   const targetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  // 1. 状态管理：用于存储需要横向滚动的总距离
   const [xRange, setXRange] = useState(0);
 
-  // 2. 动态计算宽度：确保在不同屏幕下都能精准停在最后一张卡片
   useEffect(() => {
-    if (contentRef.current) {
-      const calculateWidth = () => {
-        const totalWidth = contentRef.current!.scrollWidth;
-        const windowWidth = window.innerWidth;
-        // 我们需要移动的距离 = 内容总宽度 - 视口宽度
-        // 结果取负值，因为是向左移动
-        setXRange(-(totalWidth - windowWidth));
-      };
+    if (!contentRef.current) return;
 
-      calculateWidth();
-      window.addEventListener("resize", calculateWidth);
-      return () => window.removeEventListener("resize", calculateWidth);
-    }
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const totalWidth = entry.contentRect.width; // 获取实际内容宽度
+        const windowWidth = window.innerWidth;
+        setXRange(-(totalWidth - windowWidth));
+      }
+    });
+
+    resizeObserver.observe(contentRef.current);
+    return () => resizeObserver.disconnect();
   }, []);
 
   const { scrollYProgress } = useScroll({
     target: targetRef,
-    offset: ["start start", "end end"], // 确保从容器顶部开始，到底部结束
+    offset: ["start start", "end end"],
   });
 
-  // 3. 关键优化：使用 useSpring 增加物理阻尼感
-  // 这实现了“慢慢停止”的效果，而不是生硬的机械停止
-  const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 120, // 刚度：数值越小越“软”
-    damping: 25, // 阻尼：数值越大，停止时的摩擦力越大（越平滑）
-    restDelta: 0.001,
-  });
-
-  // 4. 线性映射：从 0 映射到计算出的实际像素距离
-  const x = useTransform(smoothProgress, [0, 1], ["0px", `${xRange}px`]);
+  const x = useTransform(scrollYProgress, [0, 1], ["0px", `${xRange}px`]);
 
   const cards = [
     {
@@ -79,18 +67,23 @@ export default function CommercialImpact() {
   ];
 
   return (
-    // 调整高度：h-[500vh] 会让滚动过程更长，从而感觉更慢、更从容
-    <section ref={targetRef} className="relative h-[500vh] bg-neutral-950">
+    <section ref={targetRef} className="relative h-[400vh] bg-neutral-950">
       <div className="sticky top-0 flex h-screen items-center overflow-hidden">
-        {/* 将 contentRef 绑定在这里用于测量宽度 */}
-        <motion.div ref={contentRef} style={{ x }} className="flex gap-0">
+        <motion.div
+          ref={contentRef}
+          style={{ x }}
+          // ✅ 关键优化：will-change: transform
+          // 这告诉浏览器这个元素即将发生变换，浏览器会预先将其提升到 GPU 合成层，
+          // 避免每次滚动都触发 CPU 重绘 (Repaint)。
+          className="flex gap-0 will-change-transform backface-visibility-hidden"
+        >
           {/* 1. Intro Panel */}
-          <div className="w-screen h-screen flex-shrink-0 flex flex-col justify-center px-6 md:px-20 border-r border-neutral-800 relative z-10 bg-neutral-950">
+          <div className="w-screen h-screen shrink-0 flex flex-col justify-center px-6 md:px-20 border-r border-neutral-800 relative z-10 bg-neutral-950">
             <div className="max-w-4xl">
               <h2 className="text-sm font-mono text-lime-400 mb-8 uppercase tracking-widest flex items-center gap-2">
                 <Target className="w-4 h-4" /> Commercial Impact
               </h2>
-              <h3 className="text-[9vw] leading-[0.85] font-black uppercase tracking-tighter mb-12">
+              <h3 className="text-[9vw] leading-[0.85] font-black uppercase tracking-tighter mb-12 text-white">
                 不只是艺术.
                 <br />
                 <span className="text-neutral-700">Not Just Art.</span>
@@ -98,7 +91,7 @@ export default function CommercialImpact() {
               <div className="flex items-center gap-6 pl-2 border-l-2 border-lime-400">
                 <p className="text-xl md:text-2xl text-neutral-400 max-w-xl font-light">
                   在这个注意力稀缺的时代，我们用技术为您打造
-                  <span className="text-white font-bold">
+                  <span className="text-white font-bold ml-2">
                     高效卓越的应用体验
                   </span>
                 </p>
@@ -114,10 +107,13 @@ export default function CommercialImpact() {
           {cards.map((card, i) => (
             <div
               key={i}
-              className="w-[90vw] md:w-[60vw] h-screen flex-shrink-0 flex flex-col justify-center px-8 md:px-24 border-r border-neutral-800 bg-neutral-950 relative group hover:bg-neutral-900 transition-colors duration-700"
+              // 优化：移除 w-[90vw]，在桌面端固定宽度通常性能更好，或者保持现状
+              // 使用 translate-z-0 强制开启 GPU 加速
+              className="w-[90vw] md:w-[60vw] h-screen shrink-0 flex flex-col justify-center px-8 md:px-24 border-r border-neutral-800 bg-neutral-950 relative group hover:bg-neutral-900 transition-colors duration-500 transform-gpu"
             >
               <div className="relative z-10">
-                <div className="mb-10 p-4 w-fit rounded-2xl bg-lime-400 shadow-[0_0_30px_rgba(163,230,53,0.3)]">
+                {/* 优化阴影：过大的 blur radius (30px) 非常消耗 GPU，适当减小或使用 opacity */}
+                <div className="mb-10 p-4 w-fit rounded-2xl bg-lime-400 shadow-[0_0_15px_rgba(163,230,53,0.4)]">
                   {card.icon}
                 </div>
                 <h4 className="text-5xl md:text-7xl font-bold uppercase tracking-tighter mb-4 text-white">
@@ -131,6 +127,8 @@ export default function CommercialImpact() {
                 </p>
 
                 <div className="border-t border-neutral-800 pt-8 group-hover:border-lime-400/30 transition-colors duration-500">
+                  {/* bg-clip-text 性能开销很大，如果此时还有 transform 动画会掉帧。
+                      这里去掉了 transition-all，只做简单的颜色切换，或者保持现状但确保父容器有 transform-gpu */}
                   <div className="text-7xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-700 group-hover:from-lime-400 group-hover:to-white transition-all duration-500">
                     {card.metric}
                   </div>
@@ -140,32 +138,32 @@ export default function CommercialImpact() {
                 </div>
               </div>
 
-              {/* Background Huge Number Decoration */}
-              <div className="absolute top-10 right-10 text-[20vw] font-black text-neutral-900 select-none z-0 opacity-50 group-hover:opacity-100 group-hover:text-neutral-800 transition-all duration-700">
+              {/* Background Huge Number */}
+              <div className="absolute top-10 right-10 text-[20vw] font-black text-neutral-800/30 select-none z-0 group-hover:text-neutral-800/60 transition-colors duration-700">
                 0{i + 1}
               </div>
             </div>
           ))}
 
           {/* 3. Final Call to Action Panel */}
-          <div className="w-screen h-screen flex-shrink-0 flex flex-col justify-center items-center bg-lime-500 text-black relative overflow-hidden">
+          <div className="w-screen h-screen shrink-0 flex flex-col justify-center items-center bg-lime-500 text-black relative overflow-hidden transform-gpu">
             <div className="relative z-10 text-center">
               <h2 className="text-[12vw] font-black uppercase tracking-tighter leading-[0.85] mb-8">
                 Ready to <br /> Scale?
               </h2>
               <p className="text-xl md:text-2xl font-bold mb-12 max-w-xl mx-auto">
-                联系我帮你解决您的问题。
+                联系我解决您的问题。
               </p>
               <Link
                 href="/contact"
-                className="px-12 py-6 bg-black text-white text-xl font-bold rounded-full uppercase tracking-widest hover:scale-105 hover:bg-white hover:text-black transition-all duration-300 shadow-2xl"
+                className="px-12 py-6 bg-black text-white text-xl font-bold rounded-full uppercase tracking-widest hover:scale-105 hover:bg-white hover:text-black transition-all duration-300 shadow-xl"
               >
-                联系我
+                开始
               </Link>
             </div>
 
-            {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:16px_16px]" />
+            {/* Background Pattern - 使用 CSS 渲染而非图片，性能尚可 */}
+            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
           </div>
         </motion.div>
       </div>

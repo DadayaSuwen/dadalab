@@ -10,7 +10,8 @@ import Pricing from "./components/index/pricing";
 import CommercialImpact from "./components/index/commercial";
 
 export const metadata: Metadata = {
-  title: "首页 - 专业nextjs web建设",
+  title:
+    "哒哒个人工作室 - 前端技术构建商业增长引擎，提供网站设计、开发、SEO优化一站式服务",
   description:
     "哒哒个人工作室提供专业的高端商业网站建设服务，包括企业官网、电商平台、品牌网站等。采用Next.js技术栈，确保极致性能和SEO优化，助力您的业务增长。",
   keywords: [
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "哒哒个人工作室 - 专业高端商业网站建设",
     description:
-      "用顶级前端技术构建商业增长引擎，提供网站设计、开发、SEO优化一站式服务",
+      "前端技术构建商业增长引擎，提供网站设计、开发、SEO优化一站式服务",
     images: [
       {
         url: "/image/og-home.jpg",

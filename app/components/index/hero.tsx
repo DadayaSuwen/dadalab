@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, memo } from "react";
 import {
   motion,
   useScroll,
@@ -11,153 +11,171 @@ import { Play, X } from "lucide-react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import gsap from "gsap";
+import FloatingLines from "../ui/floating-lines";
+import Link from "next/link";
 
-// --- 1. 新的 Vertex Shader (机械抖动) ---
 const vertexShader = `
   varying vec2 vUv;
-  uniform float uTime;
-  uniform float uHover;
-  
-  // 伪随机函数
-  float random(vec2 st) {
-    return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
-  }
-
   void main() {
     vUv = uv;
-    vec3 pos = position;
-    
-    // --- 机械震动 (Glitch Shake) ---
-    // 只有在 hover 时才应用
-    // 使用高频 sin 函数模拟电流不稳定的抖动
-    float shake = random(vec2(uTime, 0.0)) * 2.0 - 1.0; 
-    
-    // 仅在 X 轴方向极其微小的快速震动
-    pos.x += shake * 0.005 * uHover; 
-    
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
 
-// --- 2. 新的 Fragment Shader (RGB色差 + 水平撕裂) ---
 const fragmentShader = `
   uniform sampler2D uTexture;
+  uniform vec2 uMouse;
   uniform float uHover;
   uniform float uTime;
+  uniform vec2 uScale;
+
   varying vec2 vUv;
 
-  // 随机函数
-  float random(vec2 st) {
-      return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
-  }
-
   void main() {
-    vec2 uv = vUv;
-    
-    // --- 效果1: 水平切片撕裂 (Horizontal Slicing) ---
-    // 把 Y 轴分成 20 个切片
-    float sliceY = floor(uv.y * 20.0); 
-    // 根据时间和切片位置计算一个随机的水平偏移量
-    float sliceOffset = (random(vec2(sliceY, floor(uTime * 20.0))) - 0.5) * 0.05 * uHover;
-    
-    // 应用偏移到 X 轴
-    vec2 distortedUV = uv + vec2(sliceOffset, 0.0);
-    
-    // --- 效果2: RGB 色差分离 (Chromatic Aberration) ---
-    // 红色通道向左偏，蓝色通道向右偏，强度由 uHover 控制
-    float rOffset = 0.02 * uHover;
-    float bOffset = -0.02 * uHover;
+    // 1. Cover 缩放 (UV 变换)
+    vec2 uv = (vUv - 0.5) * uScale + 0.5;
 
-    float r = texture2D(uTexture, distortedUV + vec2(rOffset, 0.0)).r;
-    float g = texture2D(uTexture, distortedUV).g;
-    float b = texture2D(uTexture, distortedUV + vec2(bOffset, 0.0)).b;
+    // 2. 鼠标距离计算
+    float dist = distance(uv, uMouse);
+    float decay = smoothstep(0.6, 0.0, dist) * uHover;
     
-    // 混合一点噪点增加“脏”的质感
-    float noise = random(uv + uTime) * 0.1 * uHover;
-    
+    // 3. 波浪变形 (限制幅度)
+    float wave = sin(uv.y * 10.0 + uTime * 5.0) * 0.005 * decay;
+    float waveX = cos(uv.x * 10.0 + uTime * 4.0) * 0.005 * decay;
+
+    // 4. RGB 色散 (偏移量)
+    // 注意：这里的偏移量最大约为 0.025，所以我们的安全边距(safeMargin)至少要预留 0.03 以上
+    float r = texture2D(uTexture, uv + vec2(wave + 0.02 * decay, waveX)).r;
+    float g = texture2D(uTexture, uv + vec2(wave, waveX)).g;
+    float b = texture2D(uTexture, uv + vec2(wave - 0.02 * decay, waveX)).b;
     gl_FragColor = vec4(r, g, b, 1.0);
   }
 `;
 
-// --- 3. 微调组件逻辑 (让过渡更干脆) ---
-const WebGLImage = ({ isVideoOpen }: { isVideoOpen: boolean }) => {
+const WebGLImage = memo(({ isVideoOpen }: { isVideoOpen: boolean }) => {
   const meshRef = useRef<THREE.Mesh>(null);
-  const texture = useTexture("/image/hero.jpg");
+  const materialRef = useRef<THREE.ShaderMaterial>(null);
 
-  const uniforms = useMemo(
-    () => ({
-      uTexture: { value: texture },
-      uTime: { value: 0 },
-      uHover: { value: 0 },
-    }),
-    [texture]
-  );
+  const rawTexture = useTexture("/image/hero.jpg");
+
+  const texture = useMemo(() => {
+    const t = rawTexture.clone();
+    t.wrapS = THREE.ClampToEdgeWrapping;
+    t.wrapT = THREE.ClampToEdgeWrapping;
+    t.minFilter = THREE.LinearFilter;
+    t.magFilter = THREE.LinearFilter;
+    t.needsUpdate = true;
+    return t;
+  }, [rawTexture]);
 
   const { viewport } = useThree();
+  const mouseRef = useRef(new THREE.Vector2(0.5, 0.5));
+  const hoverTargetRef = useRef(0);
 
+  // 3. 鼠标事件
   useEffect(() => {
-    const handleMouseMove = () => {
-      if (isVideoOpen) return;
-
-      // --- 机械感的动画参数修改 ---
-      // 这里的动画不再是缓慢的 ease，而是更快速、更像开关的“冲击”
-      gsap.to(uniforms.uHover, {
-        value: 1,
-        duration: 0.1, // 极快进入 (0.1秒)，产生撞击感
-        ease: "rough({ template: none.out, strength: 1, points: 20, taper: 'none', randomize: true, clamp: false})", // 如果没有引入 roughEase 插件，可以用 "steps(5)" 或简单的 "power4.out"
-        // 简单版用下面这个:
-        // ease: "power4.out",
-        overwrite: true,
-        onComplete: () => {
-          // 恢复时稍微带一点余震
-          gsap.to(uniforms.uHover, {
-            value: 0,
-            duration: 0.4,
-            ease: "bounce.out",
-          });
-        },
-      });
+    const handleMouseMove = (e: MouseEvent) => {
+      const x = e.clientX / window.innerWidth;
+      const y = 1.0 - e.clientY / window.innerHeight;
+      mouseRef.current.set(x, y);
+      hoverTargetRef.current = 1;
     };
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [uniforms, isVideoOpen]);
+  }, []);
 
-  useFrame((state) => {
-    if (meshRef.current) {
-      (meshRef.current.material as THREE.ShaderMaterial).uniforms.uTime.value =
-        state.clock.getElapsedTime();
+  // 4. Uniforms
+  const uniforms = useMemo(() => {
+    return {
+      uTexture: { value: texture },
+      uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+      uHover: { value: 0 },
+      uTime: { value: 0 },
+      uScale: { value: new THREE.Vector2(1, 1) },
+    };
+  }, [texture]);
 
-      if (!isVideoOpen) {
-        meshRef.current.rotation.y = THREE.MathUtils.lerp(
-          meshRef.current.rotation.y,
-          (state.pointer.x * Math.PI) / 60,
-          0.1
+  // 5. 计算比例
+  useEffect(() => {
+    // 这里依然要做类型断言
+    const img = texture.image as HTMLImageElement;
+    if (!img || !img.width || !img.height) return;
+
+    const imageAspect = img.width / img.height;
+    const screenAspect = viewport.width / viewport.height;
+
+    if (materialRef.current) {
+      const safeMargin = 0.95;
+
+      if (screenAspect > imageAspect) {
+        materialRef.current.uniforms.uScale.value.set(
+          1 * safeMargin,
+          (imageAspect / screenAspect) * safeMargin
         );
-        meshRef.current.rotation.x = THREE.MathUtils.lerp(
-          meshRef.current.rotation.x,
-          (-state.pointer.y * Math.PI) / 60,
-          0.1
+      } else {
+        materialRef.current.uniforms.uScale.value.set(
+          (screenAspect / imageAspect) * safeMargin,
+          1 * safeMargin
         );
       }
+    }
+  }, [viewport, texture]);
+
+  // 6. 动画循环
+  useFrame((state) => {
+    if (!materialRef.current || isVideoOpen) return;
+
+    const time = state.clock.getElapsedTime();
+    materialRef.current.uniforms.uTime.value = time;
+    materialRef.current.uniforms.uMouse.value.lerp(mouseRef.current, 0.1);
+
+    hoverTargetRef.current = THREE.MathUtils.lerp(
+      hoverTargetRef.current,
+      0,
+      0.05
+    );
+
+    materialRef.current.uniforms.uHover.value = THREE.MathUtils.lerp(
+      materialRef.current.uniforms.uHover.value,
+      hoverTargetRef.current,
+      0.1
+    );
+
+    if (meshRef.current) {
+      meshRef.current.rotation.y = THREE.MathUtils.lerp(
+        meshRef.current.rotation.y,
+        (state.pointer.x * Math.PI) / 120,
+        0.05
+      );
+      meshRef.current.rotation.x = THREE.MathUtils.lerp(
+        meshRef.current.rotation.x,
+        (-state.pointer.y * Math.PI) / 120,
+        0.05
+      );
     }
   });
 
   return (
-    <mesh ref={meshRef} scale={[viewport.width, viewport.height, 1]}>
-      <planeGeometry args={[1, 1, 1, 1]} />{" "}
-      {/* 机械故障不需要细分的网格，1x1 就够了，性能更好 */}
+    <mesh
+      ref={meshRef}
+      scale={[viewport.width * 1.05, viewport.height * 1.05, 1]}
+    >
+      <planeGeometry args={[1, 1]} />
       <shaderMaterial
+        ref={materialRef}
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
         uniforms={uniforms}
-        wireframe={false}
+        transparent={true}
       />
     </mesh>
   );
-};
-// --- 主组件 ---
+});
+
+WebGLImage.displayName = "WebGLImage";
+
+// --- 主组件 (保持你的布局逻辑不变) ---
 export default function Hero() {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -167,52 +185,98 @@ export default function Hero() {
     offset: ["start start", "end end"],
   });
 
-  // 文字动画
-  const textOpacity = useTransform(scrollYProgress, [0, 0.1], [1, 0]);
-  const textScale = useTransform(scrollYProgress, [0, 0.1], [1, 1.2]);
-  const textBlur = useTransform(scrollYProgress, [0, 0.1], ["0px", "10px"]);
+  const textOpacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
+  const textScale = useTransform(scrollYProgress, [0, 0.2], [1, 1.1]);
+  const textBlur = useTransform(scrollYProgress, [0, 0.2], ["0px", "10px"]);
 
-  // --- 关键修改：带圆角的遮罩揭示 ---
-  // 使用 inset(... round 32px) 语法，确保在揭示过程中，裁剪区域本身就是带圆角的
   const cardClipPath = useTransform(
     scrollYProgress,
-    [0.1, 0.5],
-    [
-      "inset(100% 0% 0% 0% round 32px)", // 初始状态：从底部完全闭合，带圆角
-      "inset(0% 0% 0% 0% round 32px)", // 结束状态：完全展开，保留圆角
-    ]
+    [0.1, 0.6],
+    ["inset(100% 0% 0% 0% round 32px)", "inset(0% 0% 0% 0% round 32px)"]
   );
 
-  // 内部图片视差
-  const innerImageY = useTransform(scrollYProgress, [0.1, 0.5], ["15%", "0%"]);
-
-  // 按钮显现
-  const buttonOpacity = useTransform(scrollYProgress, [0.4, 0.6], [0, 1]);
+  const innerImageY = useTransform(scrollYProgress, [0.1, 0.6], ["15%", "0%"]);
+  const buttonOpacity = useTransform(scrollYProgress, [0.6, 0.9], [0, 1]);
   const buttonPointerEvents = useTransform(scrollYProgress, (v) =>
-    v > 0.5 ? "auto" : "none"
+    v > 0.6 ? "auto" : "none"
   );
 
   return (
     <section
       ref={containerRef}
-      className="relative w-full bg-neutral-950 text-white"
-      style={{ height: "300vh" }}
+      className="relative w-full bg-neutral-950 text-white h-[200vh]"
     >
       <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col items-center justify-center">
+        {/* 背景噪音 - 降低不透明度提高质感 */}
         <div className="absolute inset-0 z-0 opacity-[0.05] pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
-        {/* 文字层 */}
+        <div className="absolute inset-0 z-0 opacity-100">
+          <FloatingLines
+            linesGradient={["#a3e635", "#171717"]}
+            mixBlendMode="screen"
+            animationSpeed={0.5}
+            lineDistance={10}
+            bendStrength={0.5}
+          />
+        </div>
+
+        {/* 文字内容 */}
         <motion.div
           style={{ opacity: textOpacity, scale: textScale, filter: textBlur }}
           className="absolute inset-0 flex flex-col justify-center items-center pointer-events-none z-10"
         >
-          <div className="relative">
-            <h1 className="text-[18vw] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-500 leading-none">
-              DIGITAL
+          <div className="mb-8 flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-lime-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-lime-500"></span>
+            </span>
+            <span className="text-xs font-mono text-lime-400 tracking-widest uppercase">
+              Available for projects
+            </span>
+          </div>
+
+          <div className="relative text-center mix-blend-difference">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white tracking-tight leading-tight mb-2">
+              全栈开发 <span className="text-neutral-500">&</span> 开发设计
             </h1>
-            <h1 className="text-[18vw] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-neutral-500 leading-none mt-[-4vw]">
-              REALITY
-            </h1>
+            <p className="text-xl md:text-2xl text-neutral-400 font-light tracking-wide mt-4 max-w-2xl mx-auto">
+              开发好用的
+              <span className="text-lime-400 font-mono ml-2">应用软件</span>
+            </p>
+          </div>
+
+          <div className="mt-12 flex flex-wrap justify-center gap-3 md:gap-8 opacity-80">
+            {[
+              "React 生态",
+              "3D 视觉 (Three.js)",
+              "后端架构 (Node)",
+              "移动端适配",
+            ].map((tech, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-2 group cursor-default pointer-events-auto"
+              >
+                <div className="w-1 h-1 bg-neutral-600 rounded-full group-hover:bg-lime-400 transition-colors" />
+                <span className="text-sm md:text-base font-mono text-neutral-300 group-hover:text-white transition-colors">
+                  {tech}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-12 flex gap-4 pointer-events-auto">
+            <Link
+              href="#work"
+              className="px-8 py-3 bg-lime-400 text-black font-bold rounded-full hover:bg-lime-300 transition-colors"
+            >
+              查看作品
+            </Link>
+            <Link
+              href="/contact"
+              className="px-8 py-3 bg-transparent border border-white/20 text-white rounded-full hover:bg-white/10 transition-colors"
+            >
+              联系我
+            </Link>
           </div>
           <motion.div
             initial={{ opacity: 0 }}
@@ -220,25 +284,28 @@ export default function Hero() {
             transition={{ delay: 0.5 }}
             className="mt-8 text-neutral-500 font-mono text-xs tracking-[0.5em]"
           >
-            SCROLL TO REVEAL
+            滚动探索
           </motion.div>
         </motion.div>
 
         {/* WebGL 卡片层 */}
         <motion.div
           style={{
-            clipPath: cardClipPath, // 这里应用带圆角的遮罩
+            clipPath: cardClipPath,
           }}
-          // 添加 rounded-[32px] 作为一个兜底，同时 overflow-hidden 确保内容不溢出
           className="relative z-30 w-[90vw] h-[70vh] md:w-[80vw] md:h-[80vh] bg-neutral-900 shadow-2xl overflow-hidden rounded-[32px] will-change-[clip-path]"
         >
-          {/* 内层视差容器 */}
           <motion.div
             style={{ y: innerImageY }}
             className="absolute inset-0 w-full h-full will-change-transform"
           >
             <div className="absolute inset-0 w-full h-full cursor-pointer">
-              <Canvas dpr={[1, 2]} camera={{ position: [0, 0, 5], fov: 45 }}>
+              {/* 性能关键：限制 dpr 最大为 1.5，防止 4K 屏渲染压力过大 */}
+              <Canvas
+                dpr={[1, 1.5]}
+                camera={{ position: [0, 0, 5], fov: 45 }}
+                gl={{ antialias: false }}
+              >
                 <WebGLImage isVideoOpen={isVideoOpen} />
               </Canvas>
             </div>
@@ -270,14 +337,13 @@ export default function Hero() {
         </motion.div>
       </div>
 
-      {/* 视频弹窗 - 也加上了 rounded-3xl */}
       <AnimatePresence>
         {isVideoOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-xl"
           >
             <button
               onClick={() => setIsVideoOpen(false)}
@@ -285,7 +351,6 @@ export default function Hero() {
             >
               <X size={32} />
             </button>
-            {/* 这里的 rounded-3xl 控制视频圆角 */}
             <video
               autoPlay
               controls

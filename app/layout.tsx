@@ -95,7 +95,7 @@ export default function RootLayout({
               contactPoint: {
                 "@type": "ContactPoint",
                 contactType: "customer service",
-                email: "hello@dadastudio.com",
+                email: "robjffian@gmail.com",
               },
               address: {
                 "@type": "PostalAddress",

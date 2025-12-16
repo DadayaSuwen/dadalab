@@ -68,13 +68,13 @@ export default function Services() {
           {/* Left Column: Sticky Title */}
           <div className="md:w-1/3 md:sticky md:top-32 h-fit">
             <h2 className="text-sm font-mono text-lime-400 mb-6 uppercase tracking-widest">
-              我们的专长
+              专长
             </h2>
             <h3 className="text-5xl md:text-6xl font-bold tracking-tighter leading-tight mb-8">
-              我擅长的 <br /> 实现 <br /> 解决问题
+              我擅长 <br /> 实现及 <br /> 解决问题
             </h3>
             <p className="text-neutral-400 max-w-sm">
-              我们站在技术与艺术的交汇处，为你提供从界面交互到系统架构的一条龙服务。
+              提供从界面交互到系统部署的一条龙服务
             </p>
           </div>
 
@@ -157,7 +157,7 @@ export default function Services() {
               translateX: "20px", // Offset to not cover cursor
               translateY: "20px",
             }}
-            className="pointer-events-none fixed z-20 hidden md:block w-[400px] h-[250px] overflow-hidden rounded-lg border border-lime-400/20 shadow-2xl"
+            className="pointer-events-none fixed z-20 hidden md:block w-100 h-62.5 overflow-hidden rounded-lg border border-lime-400/20 shadow-2xl"
           >
             {/* We map all images and only show the active one to allow cross-fading if needed, or just swap src */}
             <motion.img
