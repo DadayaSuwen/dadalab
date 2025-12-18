@@ -162,10 +162,10 @@ export default function Page() {
       {/* Content Layer */}
       <main className="relative z-10">
         {/* Section 1: Introduction */}
-        <section className="h-screen flex flex-col justify-end pb-24 px-6 md:px-12 border-b border-white/10">
+        <section className="pt-32 flex flex-col justify-end pb-24 px-6 md:px-12 border-b border-white/10">
           <div className="max-w-7xl w-full mx-auto">
             <div className="flex items-center gap-4 mb-8">
-              <div className="h-[1px] w-12 bg-lime-400"></div>
+              <div className="h-px w-12 bg-lime-400"></div>
               <span className="text-lime-400 font-mono text-xs tracking-[0.2em] uppercase">
                 Based in Guangzhou
               </span>

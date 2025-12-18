@@ -5,10 +5,6 @@ import { ArrowLeft, Clock, Calendar, Hash } from "lucide-react";
 import { Metadata } from "next";
 import Image from "next/image";
 
-// ==========================================
-// 0. 类型定义 (Type Definitions)
-// ==========================================
-
 interface Tag {
   name: string;
 }
@@ -17,12 +13,9 @@ interface Category {
   name: string;
 }
 
-// 这是 Supabase 原始返回的 tags 关联结构 (中间表结构)
 interface SupabaseTagResponse {
-  tags: Tag; // 因为查询是 tags:article_tags(tags(name))
+  tags: Tag;
 }
-
-// 这是我们应用中使用的最终文章结构
 interface Article {
   slug: string;
   title: string;
@@ -35,15 +28,9 @@ interface Article {
   tags: Tag[];
 }
 
-// ==========================================
-// 1. 配置 ISR
-// ==========================================
 export const revalidate = 300;
 export const dynamicParams = true;
 
-// ==========================================
-// 2. 配置 SSG
-// ==========================================
 export async function generateStaticParams() {
   const { data: articles } = await supabase.from("articles").select("slug");
 
@@ -54,12 +41,7 @@ export async function generateStaticParams() {
   );
 }
 
-// ==========================================
-// 3. 数据获取函数
-// ==========================================
 async function getArticle(slug: string): Promise<Article | null> {
-  // 这里使用了泛型来提示 Supabase 返回的数据大概长什么样
-  // 但为了严谨，我们主要依靠下面的转换逻辑
   const { data, error } = await supabase
     .from("articles")
     .select(
@@ -74,25 +56,19 @@ async function getArticle(slug: string): Promise<Article | null> {
 
   if (error || !data) return null;
 
-  // 类型断言：告诉 TS data.tags 是 SupabaseTagResponse 数组
-  // 注意：Supabase 的类型生成比较复杂，手动写类型时这里需要断言一下
   const rawTags = data.tags as unknown as SupabaseTagResponse[];
 
   return {
     ...data,
-    // 关键修改：这里的 t 不再是 any，而是具体的结构
+
     tags: rawTags.map((t) => t.tags),
   } as Article;
 }
 
-// 定义 Props 类型
 type Props = {
   params: Promise<{ slug: string }>;
 };
 
-// ==========================================
-// 4. generateMetadata
-// ==========================================
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
 
@@ -105,9 +81,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-// ==========================================
-// 5. 页面组件
-// ==========================================
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
   const article = await getArticle(slug);
@@ -199,13 +172,6 @@ export default async function BlogPostPage({ params }: Props) {
           )}
 
           <div dangerouslySetInnerHTML={{ __html: article.content }} />
-        </div>
-
-        <div className="mt-20 pt-10 border-t border-neutral-800 text-center">
-          <p className="text-neutral-500 font-mono text-sm">
-            Thanks for reading.{" "}
-            <span className="text-lime-400">Keep Building.</span>
-          </p>
         </div>
       </div>
     </article>

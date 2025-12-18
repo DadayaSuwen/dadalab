@@ -72,9 +72,6 @@ export default function CommercialImpact() {
         <motion.div
           ref={contentRef}
           style={{ x }}
-          // ✅ 关键优化：will-change: transform
-          // 这告诉浏览器这个元素即将发生变换，浏览器会预先将其提升到 GPU 合成层，
-          // 避免每次滚动都触发 CPU 重绘 (Repaint)。
           className="flex gap-0 will-change-transform backface-visibility-hidden"
         >
           {/* 1. Intro Panel */}
@@ -97,7 +94,7 @@ export default function CommercialImpact() {
                 </p>
               </div>
               <div className="mt-12 flex gap-4 text-xs font-mono text-neutral-600 uppercase">
-                <span>Scroll to explore</span>
+                <span>让我们从右边开始</span>
                 <ArrowRight className="w-4 h-4 animate-bounce" />
               </div>
             </div>
@@ -127,9 +124,7 @@ export default function CommercialImpact() {
                 </p>
 
                 <div className="border-t border-neutral-800 pt-8 group-hover:border-lime-400/30 transition-colors duration-500">
-                  {/* bg-clip-text 性能开销很大，如果此时还有 transform 动画会掉帧。
-                      这里去掉了 transition-all，只做简单的颜色切换，或者保持现状但确保父容器有 transform-gpu */}
-                  <div className="text-7xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-neutral-700 group-hover:from-lime-400 group-hover:to-white transition-all duration-500">
+                  <div className="text-7xl md:text-9xl font-black text-transparent bg-clip-text bg-linear-to-r from-white to-neutral-700 group-hover:from-lime-400 group-hover:to-white transition-all duration-500">
                     {card.metric}
                   </div>
                   <div className="text-sm font-mono text-neutral-500 uppercase tracking-widest mt-4 flex items-center gap-2">
@@ -137,19 +132,16 @@ export default function CommercialImpact() {
                   </div>
                 </div>
               </div>
-
-              {/* Background Huge Number */}
               <div className="absolute top-10 right-10 text-[20vw] font-black text-neutral-800/30 select-none z-0 group-hover:text-neutral-800/60 transition-colors duration-700">
                 0{i + 1}
               </div>
             </div>
           ))}
 
-          {/* 3. Final Call to Action Panel */}
           <div className="w-screen h-screen shrink-0 flex flex-col justify-center items-center bg-lime-500 text-black relative overflow-hidden transform-gpu">
             <div className="relative z-10 text-center">
-              <h2 className="text-[12vw] font-black uppercase tracking-tighter leading-[0.85] mb-8">
-                Ready to <br /> Scale?
+              <h2 className="text-[16vw] font-black uppercase tracking-tighter leading-[0.85] mb-8">
+                现在开始?
               </h2>
               <p className="text-xl md:text-2xl font-bold mb-12 max-w-xl mx-auto">
                 联系我解决您的问题。
@@ -162,8 +154,7 @@ export default function CommercialImpact() {
               </Link>
             </div>
 
-            {/* Background Pattern - 使用 CSS 渲染而非图片，性能尚可 */}
-            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
+            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#000_1px,transparent_1px)] bg-size-[16px_16px] pointer-events-none" />
           </div>
         </motion.div>
       </div>
