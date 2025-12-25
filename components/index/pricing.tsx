@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { motion, useMotionTemplate, useMotionValue } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
 
-import GridScan from "../ui/grid-scan";
+import GridScan from "../grid-scan";
 import Link from "next/link";
 
 export default function Pricing() {

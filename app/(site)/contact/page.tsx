@@ -17,7 +17,7 @@ import type { UseFormRegister, FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 
-import { submitContactForm } from "@/app/actions/contact";
+import { submitContactForm } from "@/actions/contact";
 
 // --- 组件定义保持不变 ---
 const Magnetic = ({ children }: { children: React.ReactNode }) => {

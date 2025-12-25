@@ -11,7 +11,7 @@ import { Play, X } from "lucide-react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import FloatingLines from "../ui/floating-lines";
+import FloatingLines from "../floating-lines";
 import Link from "next/link";
 
 const vertexShader = `

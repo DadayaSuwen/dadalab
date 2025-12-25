@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import WeChatPopup from "../ui/wechat-popup";
+import WeChatPopup from "../wechat-popup";
 
 /**
  * Footer Static Content - 客户端组件

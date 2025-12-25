@@ -1,13 +1,13 @@
 import React from "react";
 import { Metadata } from "next";
-import Hero from "./components/index/hero";
+import Hero from "@/components/index/hero";
 
-import Services from "./components/index/services";
-import VelocityMarquee from "./components/index/velocity-marquee";
-import Work from "./components/index/work";
+import Services from "@/components/index/services";
+import VelocityMarquee from "@/components/index/velocity-marquee";
+import Work from "@/components/index/work";
 
-import Pricing from "./components/index/pricing";
-import CommercialImpact from "./components/index/commercial";
+import Pricing from "@/components/index/pricing";
+import CommercialImpact from "@/components/index/commercial";
 
 export const metadata: Metadata = {
   title:
